@@ -22,6 +22,14 @@ ff$month = match(ff$month,month_abb_lower)
 ff$day = sapply(ff$day, function(day) day %in% weekend)
 head(ff)
 
+# Replace month numbers with average temperatures per month of Bragança, a place nearby Monteshino Park
+# Retrieved from https://www.climatestotravel.com/climate/portugal/bragança
+braganca_min_temp = c(0,1,3,5,8,12,14,14,12,8,4,1)
+braganca_max_temp = c(9,11,15,16,20,26,29,29,25,18,13,10)
+braganca_avg_temp = (braganca_min_temp + braganca_max_temp)/2
+ff$month = braganca_avg_temp[ff$month]
+head(ff)
+
 # Make all columns double
 ff$month = as.double(ff$month); ff$day = as.double(ff$day); ff$area = as.double(ff$area); ff$RH = as.double(ff$RH)
 head(ff)
@@ -66,10 +74,14 @@ g = dagitty('
                 temp -> FFMC
                 wind -> FFMC
                 RH -> FFMC
+                month -> FFMC
                 temp -> DMC
                 RH -> DMC
+                month -> DMC
                 temp -> DC
+                month -> DC
                 temp -> RH
+                month -> RH
                 month -> temp
                 month -> wind
             }
@@ -91,3 +103,6 @@ fit <- bn.fit( net, as.data.frame(ff_train) ); fit
 preds = predict(fit, node="area", data=ff_test)
 abs_error = abs(ff_test$area - preds); abs_error
 
+# Show ground truth and predictions
+ff_test$area; preds
+plot(preds, ff_test$area)
