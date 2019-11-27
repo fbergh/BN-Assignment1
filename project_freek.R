@@ -82,6 +82,7 @@ impliedConditionalIndependencies(g)
 lt_out = localTests(g,ff)
 corr_lt_out = subset(lt_out, p.value<0.05 & abs(estimate)>0.1); corr_lt_out[order(abs(corr_lt_out$estimate)),]
 
+
 # Fit network to train data
 net <- model2network(toString(g,"bnlearn"))
 fit <- bn.fit( net, as.data.frame(ff_train) ); fit
@@ -90,6 +91,3 @@ fit <- bn.fit( net, as.data.frame(ff_train) ); fit
 preds = predict(fit, node="area", data=ff_test)
 abs_error = abs(ff_test$area - preds); abs_error
 
-# Show ground truth and predictions
-ff_test$area; preds
-plot(preds, ff_test$area)
