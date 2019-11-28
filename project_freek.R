@@ -109,10 +109,3 @@ abs_error = abs(ff_test$area - preds); abs_error
 ff_test$area; preds
 plot(preds, ff_test$area)
 cor.test(preds, ff_test$area)
-
-
-# Linear regression (similar to our current fitting) on area's parents is bad (nothing significant), so our data probably does not explain area well (not our fault). 
-# We should look into pre-processing again to make sure we didn't mess up. If we didn't, then there's not enough data.
-# In that case, we can look at coefficients between other variables in the network and try to predict other variables, which is a good thing to do anyway.
-
-# The prediction error for the test data is expected to be equal or even larger to train data.
