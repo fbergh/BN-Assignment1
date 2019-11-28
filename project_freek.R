@@ -17,6 +17,7 @@ qq_plot = function(data) {
 month_abb_lower = lapply(month.abb,tolower)
 weekend = c("sat","sun")
 ff = ff_orig
+ff = ff[ff$area>0,]
 ff$X = NULL; ff$Y = NULL; ff$rain = NULL
 ff$month = match(ff$month,month_abb_lower)
 ff$day = sapply(ff$day, function(day) day %in% weekend)
@@ -34,12 +35,13 @@ head(ff)
 ff$month = as.double(ff$month); ff$day = as.double(ff$day); ff$area = as.double(ff$area); ff$RH = as.double(ff$RH)
 head(ff)
 
-qq_plot(ff$area)
-# Add small value to zero values in area column such that the log-transform does not give "Inf" values
-ff$area[ff$area == 0] = ff$area[ff$area == 0] + 0.5
-ff$area = log(ff$area)
-# Visualise QQ-plot of area to observe normality after addition of constant and log-transform
-qq_plot(ff$area)
+# ff$area = as.double(ff$area > 0)
+# qq_plot(ff$area)
+# # Add small value to zero values in area column such that the log-transform does not give "Inf" values
+# ff$area[ff$area < 0.5] = ff$area[ff$area < 0.5] + 0.5
+# ff$area = log(ff$area)
+# # Visualise QQ-plot of area to observe normality after addition of constant and log-transform
+# qq_plot(ff$area)
 
 # Create train-test split (80/20)
 train_size = floor(0.8 * nrow(ff)); train_size
@@ -101,8 +103,17 @@ fit <- bn.fit( net, as.data.frame(ff_train) ); fit
 
 # Predict area given the test data and compute absolute error
 preds = predict(fit, node="area", data=ff_test)
+# preds = as.double(preds > 0.5)
 abs_error = abs(ff_test$area - preds); abs_error
 
 # Show ground truth and predictions
 ff_test$area; preds
 plot(preds, ff_test$area)
+cor.test(preds, ff_test$area)
+
+
+# Linear regression (similar to our current fitting) on area's parents is bad (nothing significant), so our data probably does not explain area well (not our fault). 
+# We should look into pre-processing again to make sure we didn't mess up. If we didn't, then there's not enough data.
+# In that case, we can look at coefficients between other variables in the network and try to predict other variables, which is a good thing to do anyway.
+
+# The prediction error for the test data is expected to be equal or even larger to train data.
