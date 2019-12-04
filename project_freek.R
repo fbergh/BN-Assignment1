@@ -33,7 +33,7 @@ ff$avg_wind = as.double(braganca_avg_wind[ff$month])
 head(ff)
 
 # Make all columns double
-ff$month = as.double(ff$month); ff$day = as.double(ff$day); ff$area = as.double(ff$area); ff$RH = as.double(ff$RH)
+ff$month = NULL; ff$day = as.double(ff$day); ff$area = as.double(ff$area); ff$RH = as.double(ff$RH)
 head(ff)
 
 qq_plot(ff$area)
@@ -64,7 +64,7 @@ g = dagitty('
                 RH [pos="-0.511,-0.482"]
                 area [pos="-0.464,1.349"]
                 day [pos="0.149,0.943"]
-                avg_temp [pos="-1.510,-0.902"]
+                avg_temp [pos="-1,-0.902"]
                 temp [pos="-1.168,-0.482"]
                 wind [pos="-1.804,-0.445"]
                 avg_wind [pos="-2,-1"]
@@ -74,21 +74,20 @@ g = dagitty('
                 ISI -> area
                 FFMC -> ISI
                 wind -> ISI
-                temp -> FFMC
                 wind -> FFMC
                 RH -> FFMC
                 avg_temp -> FFMC
-                temp -> DMC
                 RH -> DMC
                 avg_temp -> DMC
-                temp -> DC
                 avg_temp -> DC
                 temp -> RH
+                avg_temp -> RH
                 avg_temp -> temp
+                avg_temp -> avg_wind
                 avg_wind -> wind
+                temp -> wind
             }
             ')
-
 plot(g)
 impliedConditionalIndependencies(g)
 
@@ -96,6 +95,7 @@ impliedConditionalIndependencies(g)
 lt_out = localTests(g,ff)
 corr_lt_out = subset(lt_out, p.value<0.05 & abs(estimate)>0.1); corr_lt_out[order(abs(corr_lt_out$estimate)),]
 
+ff_train = ff; ff_test = ff
 
 # Fit network to train data
 net <- model2network(toString(g,"bnlearn"))
@@ -107,5 +107,13 @@ abs_error = abs(ff_test$area - preds); abs_error
 
 # Show ground truth and predictions
 ff_test$area; preds
-plot(preds, ff_test$area)
+plot(preds, ff_test$area); abline(coef = c(0,1))
 cor.test(preds, ff_test$area)
+
+# Predict FFMC, DMC, DC, and ISI
+preds_FFMC = predict(fit, node="FFMC", data=ff_test[c("wind","avg_temp","RH")]); plot(preds_FFMC, ff_test$FFMC); abline(coef = c(0,1))
+# Plot FFMC without outlier
+plot(preds_FFMC[ff_test$FFMC>=80], ff_test$FFMC[ff_test$FFMC>=80]); abline(coef = c(0,1))
+preds_DMC = predict(fit, node="DMC", data=ff_test[c("avg_temp","RH")]); plot(preds_DMC, ff_test$DMC); abline(coef = c(0,1))
+preds_DC = predict(fit, node="DC", data=ff_test[c("avg_temp")]); plot(preds_DC, ff_test$DC); abline(coef = c(0,1))
+preds_ISI = predict(fit, node="ISI", data=ff_test[c("wind","FFMC")]); plot(preds_ISI, ff_test$ISI); abline(coef = c(0,1))
