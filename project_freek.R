@@ -17,7 +17,9 @@ qq_plot = function(data) {
 month_abb_lower = lapply(month.abb,tolower)
 weekend = c("sat","sun")
 ff = ff_orig
+# Remove X, Y, and rain variables
 ff$X = NULL; ff$Y = NULL; ff$rain = NULL
+# Convert month variable to numbers and day variable to boolean of weekend
 ff$month = match(ff$month,month_abb_lower)
 ff$day = sapply(ff$day, function(day) day %in% weekend)
 head(ff)
@@ -37,22 +39,10 @@ ff$month = NULL; ff$day = as.double(ff$day); ff$area = as.double(ff$area); ff$RH
 head(ff)
 
 qq_plot(ff$area)
-# Add small value to zero values in area column such that the log-transform does not give "Inf" values
-ff$area[ff$area < 0.5] = ff$area[ff$area < 0.5] + 0.5
-ff$area = log(ff$area)
+# Do log(area+1) transform of area similar to paper
+ff$area = log(ff$area + 1.0)
 # Visualise QQ-plot of area to observe normality after addition of constant and log-transform
 qq_plot(ff$area)
-
-# Create train-test split (80/20)
-train_size = floor(0.8 * nrow(ff)); train_size
-set.seed(420)   # Seed for reproducible split
-train_ind <- sample(seq_len(nrow(ff)), size = train_size)
-ff_train <- ff[train_ind, ]
-ff_test <- ff[-train_ind, ]
-
-# Describe test and train sets to make sure they are partitioned fairly
-describe(ff_train)[c("n","mean","sd","median","min","max","range")]
-describe(ff_test)[c("n","mean","sd","median","min","max","range")]
 
 # Create and plot DAG
 g = dagitty('
@@ -77,43 +67,50 @@ g = dagitty('
                 wind -> FFMC
                 RH -> FFMC
                 avg_temp -> FFMC
+                temp -> FFMC
                 RH -> DMC
-                avg_temp -> DMC
+                avg_temp -> DMC 
+                temp -> DMC
                 avg_temp -> DC
+                temp -> DC
                 temp -> RH
                 avg_temp -> RH
                 avg_temp -> temp
-                avg_temp -> avg_wind
+                avg_temp <-> avg_wind
                 avg_wind -> wind
-                temp -> wind
+                temp <-> wind
             }
             ')
 plot(g)
-impliedConditionalIndependencies(g)
 
 # Locally test network and show results with an absolute significant correlation greater than 0.1 (sorted on correlation magnitude)
 lt_out = localTests(g,ff)
 corr_lt_out = subset(lt_out, p.value<0.05 & abs(estimate)>0.1); corr_lt_out[order(abs(corr_lt_out$estimate)),]
 
-ff_train = ff; ff_test = ff
-
 # Fit network to train data
 net <- model2network(toString(g,"bnlearn"))
-fit <- bn.fit( net, as.data.frame(ff_train) ); fit
+fit <- bn.fit( net, as.data.frame(ff) ); fit
 
 # Predict area given the test data and compute absolute error
-preds = predict(fit, node="area", data=ff_test)
-abs_error = abs(ff_test$area - preds); abs_error
+preds = predict(fit, node="area", data=ff)
+abs_error = abs(ff$area - preds); abs_error
 
 # Show ground truth and predictions
-ff_test$area; preds
-plot(preds, ff_test$area); abline(coef = c(0,1))
-cor.test(preds, ff_test$area)
+ff$area; preds
+plot(preds, ff$area); abline(coef = c(0,1))
+cor.test(preds, ff$area)
 
 # Predict FFMC, DMC, DC, and ISI
-preds_FFMC = predict(fit, node="FFMC", data=ff_test[c("wind","avg_temp","RH")]); plot(preds_FFMC, ff_test$FFMC); abline(coef = c(0,1))
+preds_FFMC = predict(fit, node="FFMC", data=ff[c("wind","temp","avg_temp","RH")]); plot(preds_FFMC, ff$FFMC); abline(coef = c(0,1))
 # Plot FFMC without outlier
-plot(preds_FFMC[ff_test$FFMC>=80], ff_test$FFMC[ff_test$FFMC>=80]); abline(coef = c(0,1))
-preds_DMC = predict(fit, node="DMC", data=ff_test[c("avg_temp","RH")]); plot(preds_DMC, ff_test$DMC); abline(coef = c(0,1))
-preds_DC = predict(fit, node="DC", data=ff_test[c("avg_temp")]); plot(preds_DC, ff_test$DC); abline(coef = c(0,1))
-preds_ISI = predict(fit, node="ISI", data=ff_test[c("wind","FFMC")]); plot(preds_ISI, ff_test$ISI); abline(coef = c(0,1))
+plot(preds_FFMC[ff$FFMC>=80], ff$FFMC[ff$FFMC>=80]); abline(coef = c(0,1))
+cor.test(preds_FFMC,ff$FFMC)
+
+preds_DMC = predict(fit, node="DMC", data=ff[c("avg_temp","temp","RH")]); plot(preds_DMC, ff$DMC); abline(coef = c(0,1))
+cor.test(preds_DMC,ff$DMC)
+
+preds_DC = predict(fit, node="DC", data=ff[c("avg_temp","temp")]); plot(preds_DC, ff$DC); abline(coef = c(0,1))
+cor.test(preds_DC,ff$DC)
+
+preds_ISI = predict(fit, node="ISI", data=ff[c("wind","FFMC")]); plot(preds_ISI, ff$ISI); abline(coef = c(0,1))
+cor.test(preds_ISI,ff$ISI)
