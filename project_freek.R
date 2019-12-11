@@ -95,20 +95,22 @@ fit <- bn.fit( net, as.data.frame(ff) ); fit
 
 # Predict area given the test data and compute absolute error
 preds_area = predict(fit, node="area", data=ff)
-abs_error = abs(ff$area - preds); abs_error
 
 # To en/disable saving plots comment out/in the lines with "png()" and "dev.off()"
 # Show ground truth and predictions
 # png(filename="img/area-preds-plot.png")
 plot(preds_area, ff$area, ann=FALSE); abline(coef = c(0,1), c="red"); title(main="Predictions of area plotted as a function of the ground truth"); title(xlab="Ground Truth of area"); title(ylab="Predictions of area")
 # dev.off()
+mad_area = mean(abs(ff$area - preds)); mad_area; mean(ff$area); sd(ff$area)
 cor.test(preds_area, ff$area)
+t.test(preds_area, ff$area)
 
 # Predict FFMC, DMC, DC, and ISI and plot them
 preds_FFMC = predict(fit, node="FFMC", data=ff[c("wind","temp","avg_temp","RH")])
 # png(filename="img/FFMC-preds-plot.png")
 plot(preds_FFMC, ff$FFMC, ann=FALSE); abline(coef = c(0,1), c="red"); title(main="Predictions of FFMC plotted as a function of the ground truth"); title(xlab="Ground Truth of FFMC"); title(ylab="Predictions of FFMC")
 # dev.off()
+mad_FFMC = mean(abs(preds_FFMC-ff$FFMC)); mad_FFMC; mean(ff$FFMC); sd(ff$FFMC)
 cor.test(preds_FFMC,ff$FFMC)
 t.test(preds_FFMC, ff$FFMC, paired=TRUE)
 
@@ -116,6 +118,7 @@ preds_DMC = predict(fit, node="DMC", data=ff[c("avg_temp","temp","RH")])
 # png(filename="img/DMC-preds-plot.png")
 plot(preds_DMC, ff$DMC, ann=FALSE); abline(coef = c(0,1), c="red"); title(main="Predictions of DMC plotted as a function of the ground truth"); title(xlab="Ground Truth of DMC"); title(ylab="Predictions of DMC")
 # dev.off()
+mad_DMC = mean(abs(preds_DMC-ff$DMC)); mad_DMC; mean(ff$DMC); sd(ff$DMC)
 cor.test(preds_DMC,ff$DMC)
 t.test(preds_DMC, ff$DMC, paired=TRUE)
 
@@ -123,6 +126,7 @@ preds_DC = predict(fit, node="DC", data=ff[c("avg_temp","temp")])
 # png(filename="img/DC-preds-plot.png")
 plot(preds_DC, ff$DC, ann=FALSE); abline(coef = c(0,1), c="red"); title(main="Predictions of DC plotted as a function of the ground truth"); title(xlab="Ground Truth of DC"); title(ylab="Predictions of DC")
 # dev.off()
+mad_DC = mean(abs(preds_DC-ff$DC)); mad_DC; mean(ff$DC); sd(ff$DC)
 cor.test(preds_DC,ff$DC)
 t.test(preds_DC, ff$DC, paired=TRUE)
 
@@ -130,5 +134,6 @@ preds_ISI = predict(fit, node="ISI", data=ff[c("wind","FFMC")])
 # png(filename="img/ISI-preds-plot.png")
 plot(preds_ISI, ff$ISI, ann=FALSE); abline(coef = c(0,1), c="red"); title(main="Predictions of ISI plotted as a function of the ground truth"); title(xlab="Ground Truth of ISI"); title(ylab="Predictions of ISI")
 # dev.off()
+mad_ISI = mean(abs(preds_ISI-ff$ISI)); mad_ISI; mean(ff$ISI); sd(ff$ISI)
 cor.test(preds_ISI, ff$ISI)
 t.test(preds_ISI, ff$ISI, paired=TRUE)
