@@ -80,7 +80,7 @@ g = dagitty('
                 avg_temp -> temp
                 avg_temp <-> avg_wind
                 avg_wind -> wind
-                temp <-> wind
+                avg_wind -> DC
             }
             ')
 plot(g)
