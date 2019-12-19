@@ -19,14 +19,6 @@ rmse = function(true, pred) {
     rmse
 }
 
-# Function for removing outliers based on inter-quantile range
-get_outlier_indeces = function(x, k=1.5, na.rm = TRUE, ...) {
-  qnt = quantile(x, probs=c(.25, .75), na.rm = na.rm, ...)
-  H = k * IQR(x, na.rm = na.rm)
-  indcs = c(which(x < (qnt[1] - H)), which(x > (qnt[2] + H)))
-  indcs
-}
-
 # Pre-process data
 month_abb_lower = lapply(month.abb,tolower)
 weekend = c("sat","sun")
@@ -78,58 +70,120 @@ qq_plot(ff$ISI)
 # Get statistics of dataframe
 describe(ff)
 
-# Loop over FFMC, DMC, DC, ISI, temp, RH, wind, and area columns (index 1 to 8) and accumulate outlier indeces
-# outlier_idcs = c()
-# for(col in 1:8) {
-#     indcs = get_outlier_indeces(ff[,col],k=3.0)
-#     print(paste(paste("Number of outliers for ", paste(names(ff)[col], ":")), length(indcs)))
-#     print(indcs)
-#     outlier_idcs = c(outlier_idcs, indcs)
-# }
-# outlier_idcs = outlier_idcs[!duplicated(outlier_idcs)]; length(outlier_idcs)
-# length(ff[,1]);ff = ff[-outlier_idcs,];length(ff[,1])
-
-# Create and plot DAG
-g = dagitty('
+# Initial exposée network based on reasoning and FWI-syste
+g_initial = dagitty('
             dag{
-                DC [pos="0.141,0.377"]
-                DMC [pos="-0.495,0.382"]
-                FFMC [pos="-1.160,0.387"]
-                ISI [pos="-1.132,0.919"]
-                RH [pos="-0.511,-0.482"]
-                area [pos="-0.464,1.349"]
-                weekend [pos="0.149,0.943"]
-                avg_temp [pos="-1,-0.902"]
-                temp [pos="-1.168,-0.482"]
-                wind [pos="-1.804,-0.445"]
-                avg_wind [pos="-2,-1"]
-                DC -> area
-                DMC -> area
-                weekend -> area
+                area [pos="0,4"]
+                ISI [pos="-1,3"]
+                day [pos="1,3"]
+                FFMC [pos="-1,2"]
+                DMC [pos="0,2"]
+                DC [pos="1,2"]
+                wind [pos="-2,1"]
+                temp [pos="-1,1"]
+                RH [pos="0,1"]
+                rain [pos="1,1"]
+                month [pos="-1.5,0"]
                 ISI -> area
+                DMC -> area
+                DC -> area
+                day -> area
                 FFMC -> ISI
                 wind -> ISI
                 wind -> FFMC
-                RH -> FFMC
-                avg_temp -> FFMC
                 temp -> FFMC
-                RH -> DMC
-                avg_temp -> DMC 
+                RH -> FFMC
+                rain -> FFMC
                 temp -> DMC
-                avg_temp -> DC
+                RH -> DMC
+                rain -> DMC
                 temp -> DC
+                rain -> DC
+                temp -> RH
+                RH -> rain
+                month -> wind
+                month -> temp
+            }
+            ')
+png(filename="img/net-1.png");plot(g_initial)
+dev.off()
+
+# Intermediate version of network after localTests
+g_intermediate = dagitty('
+            dag{
+                area [pos="0,4"]
+                ISI [pos="-1,3"]
+                weekend [pos="1,3"]
+                FFMC [pos="-1,2"]
+                DMC [pos="0,2"]
+                DC [pos="1,2"]
+                wind [pos="-2,1"]
+                temp [pos="-1,1"]
+                RH [pos="0,1"]
+                avg_wind [pos="-2,0"]
+                avg_temp [pos="-1,0"]
+                ISI -> area
+                DMC -> area
+                DC -> area
+                weekend -> area
+                wind -> ISI
+                FFMC -> ISI
+                wind -> FFMC
+                temp -> FFMC
+                RH -> FFMC
+                temp -> DMC
+                RH -> DMC
+                temp -> DC
+                temp <-> wind
+                temp -> RH
+                avg_wind -> wind
+                avg_temp -> temp
+                avg_temp <-> avg_wind
+            }
+            ')
+png(filename="img/net-2.png");plot(g_intermediate)
+dev.off()
+
+# Third and final version of the network
+g_final = dagitty('
+            dag{
+                area [pos="0,4"]
+                ISI [pos="-1,3"]
+                weekend [pos="1,3"]
+                FFMC [pos="-1,2"]
+                DMC [pos="0,2"]
+                DC [pos="1,2"]
+                wind [pos="-2,1"]
+                temp [pos="-1,1"]
+                RH [pos="0,1"]
+                avg_wind [pos="-2,0"]
+                avg_temp [pos="-0.5,0"]
+                ISI -> area
+                DMC -> area
+                DC -> area
+                weekend -> area
+                wind -> ISI
+                FFMC -> ISI
+                wind -> FFMC
+                avg_temp -> FFMC
+                RH -> FFMC
+                avg_temp -> DMC 
+                RH -> DMC
+                avg_wind -> DC
+                avg_temp -> DC
+                temp <-> wind
                 temp -> RH
                 avg_temp -> RH
                 avg_temp -> temp
-                avg_temp <-> avg_wind
                 avg_wind -> wind
-                avg_wind -> DC
+                avg_temp <-> avg_wind
             }
             ')
-plot(g)
+png(filename="img/net-3.png");plot(g_final)
+dev.off()
 
 # Locally test network and show results with an absolute significant correlation greater than 0.1 (sorted on correlation magnitude)
-lt_out = localTests(g,ff)
+lt_out = localTests(g_final,ff)
 corr_lt_out = subset(lt_out, p.value<0.05 & abs(estimate)>0.1); corr_lt_out[order(abs(corr_lt_out$estimate)),]
 
 # Fit network to train data
