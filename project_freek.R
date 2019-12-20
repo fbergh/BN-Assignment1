@@ -220,7 +220,7 @@ plot(preds_ISI, ff$ISI, ann=FALSE); abline(coef = c(0,1), c="red"); title(main="
 dev.off()
 
 # Calculate root mean squared errors
-rmse_area = rmse(ff$area, preds_area); mad_area; mean(ff$area); sd(ff$area)
+mad_area = abs(ff$area-preds_area); mad_area; mean(ff$area); sd(ff$area)
 rmse_FFMC = rmse(preds_FFMC, ff$FFMC); rmse_FFMC; mean(ff$FFMC); sd(ff$FFMC)
 rmse_DMC = rmse(preds_DMC, ff$DMC); rmse_DMC; mean(ff$DMC); sd(ff$DMC)
 rmse_DC = rmse(preds_DC, ff$DC); rmse_DC; mean(ff$DC); sd(ff$DC)
