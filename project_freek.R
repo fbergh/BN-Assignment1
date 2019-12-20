@@ -183,11 +183,13 @@ png(filename="img/net-3.png");plot(g_final)
 dev.off()
 
 # Locally test network and show results with an absolute significant correlation greater than 0.1 (sorted on correlation magnitude)
-lt_out = localTests(g_final,ff)
-corr_lt_out = subset(lt_out, p.value<0.05 & abs(estimate)>0.1); corr_lt_out[order(abs(corr_lt_out$estimate)),]
+lt_out_intermediate = localTests(g_intermediate,ff)
+corr_lt_out_intermediate = subset(lt_out_intermediate, p.value<0.05 & abs(estimate)>0.1); corr_lt_out_intermediate[order(abs(corr_lt_out_intermediate$estimate)),]
+lt_out_final = localTests(g_final,ff)
+corr_lt_out_final = subset(lt_out_final, p.value<0.05 & abs(estimate)>0.1); corr_lt_out_final[order(abs(corr_lt_out_final$estimate)),]
 
 # Fit network to train data
-net <- model2network(toString(g,"bnlearn"))
+net <- model2network(toString(g_final,"bnlearn"))
 fit <- bn.fit( net, as.data.frame(ff) ); fit
 
 # To en/disable saving plots comment out/in the lines with "png()" and "dev.off()"
