@@ -1,4 +1,10 @@
+#install.packages("lavaan")
+#devtools::install_github("jtextor/dagitty/r")
+#devtools::install_github("alishinski/lavaanPlot")
+
 # Load packages
+library(lavaan)
+library(lavaanPlot)
 library(dagitty)
 library(bnlearn)
 library(psych)          # For describe()
@@ -180,6 +186,11 @@ g_final = dagitty('
             }
             ')
 png(filename="img/net-3.png");plot(g_final)
+dev.off()
+
+# Plot the final network with (standardised) coefficients
+fit <- sem( toString(g_final,"lavaan"), data=ff )
+png(filename="img/net-3-coefficients.png");lavaanPlot(model=fit, stand=TRUE, coefs=TRUE)
 dev.off()
 
 # Locally test network and show results with an absolute significant correlation greater than 0.1 (sorted on correlation magnitude)
