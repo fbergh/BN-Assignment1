@@ -1,4 +1,4 @@
-# Using a Bayesian Network to Predict\\the Area of Forest Fires
+# Using a Bayesian Network to Predict the Area of Forest Fires
 
 ## Abstract
 
