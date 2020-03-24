@@ -1,6 +1,9 @@
-#install.packages("lavaan")
-#devtools::install_github("jtextor/dagitty/r")
-#devtools::install_github("alishinski/lavaanPlot")
+# install.packages("lavaan")
+# install.packages("bnlearn")
+# install.packages("psych")
+# install.packages("devtools")
+# devtools::install_github("jtextor/dagitty/r")
+# devtools::install_github("alishinski/lavaanPlot")
 
 # Load packages
 library(lavaan)
